@@ -1,0 +1,47 @@
+# Herdr — agent multiplexer (tmux replacement)
+# Edit here, then: herdr server reload-config
+# Full defaults: herdr --default-config
+# Docs: https://herdr.dev/docs/configuration/
+
+# Prefix is ctrl+b, same muscle memory as tmux:
+#   prefix+c  new tab        prefix+v      split vertical
+#   prefix+n/p next/prev tab prefix+minus  split horizontal
+#   prefix+h/j/k/l focus pane prefix+z     zoom pane
+#   prefix+w  workspace picker prefix+q    detach (session keeps running)
+#   prefix+?  keybind help
+[keys]
+prefix             = "ctrl+g"
+previous_tab       = "prefix+p"
+next_tab           = "prefix+n"
+switch_tab         = "prefix+1..9"
+previous_workspace = "prefix+["
+next_workspace     = "prefix+]"
+switch_workspace   = "prefix+shift+1..9"
+last_pane          = "prefix+backspace"
+
+[theme]
+name = "catppuccin"
+
+[ui]
+sidebar_width = 30
+# Sort agents by who needs attention: blocked > done > working > idle
+agent_panel_sort = "priority"
+
+show_agent_labels_on_pane_borders = true
+[ui.toast]
+# Ghostty shows these as native desktop notifications
+delivery = "terminal"
+delay_seconds = 1
+
+[ui.sound]
+enabled = true
+
+# lazygit in a throwaway pane
+[[keys.command]]
+key = "prefix+alt+g"
+type = "pane"
+command = "lazygit"
+description = "lazygit"
+
+[experimental]
+pane_history = false

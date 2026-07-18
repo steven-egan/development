@@ -1,0 +1,23 @@
+# Starship prompt — edit here, takes effect on next prompt (no rebuild)
+# Docs: https://starship.rs/config/
+"$schema" = 'https://starship.rs/config-schema.json'
+add_newline = false
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+
+[git_branch]
+symbol = " "
+format = "[$symbol$branch]($style) "
+style = "bold yellow"
+
+[git_status]
+stashed = ""
+
+[character]
+success_symbol = "[❯](green)"
+error_symbol = "[❯](red)"
+
+[cmd_duration]
+min_time = 2000

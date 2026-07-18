@@ -1,0 +1,55 @@
+alias v="nvim"
+alias lg="lazygit"
+alias ll="ls -lah"
+alias gs="git status"
+alias gd="git diff"
+alias md="glow"
+alias rebuild="~/.dotfiles/restart.sh"
+alias h="herdr"
+alias h-restart="herdr server reload-config"
+alias o="opencode"
+
+export EDITOR="nvim"
+export VISUAL="nvim"
+export NPM_CONFIG_PREFIX="$HOME/.npm-global"
+
+# fuzzy-jump to any git repo; also bound to ctrl-f
+dev() {
+  local dir
+  dir=$(fd -H -t d '^\.git$' ~/Desktop/repos --max-depth 4 -x dirname {} \; 2>/dev/null | fzf --prompt="repo> ") || return
+  cd "$dir"
+}
+bindkey -s '^f' 'dev\n'
+
+export PATH="/opt/homebrew/bin:$HOME/.npm-global/bin:$GOPATH/bin:$PATH"
+
+# new-feature <branch>: create a worktree + herdr workspace with nvim + opencode
+new-feature() {
+  local branch="${1:-}"
+  if [[ -z "$branch" ]]; then
+    read -r "branch?Branch name: "
+  fi
+  [[ -z "$branch" ]] && return 1
+
+  # Create worktree in a new herdr workspace, capture IDs
+  local result workspace panes left right
+  result=$(herdr worktree create --branch "$branch" --label "$branch" --focus --json 2>&1)
+  workspace=$(echo "$result" | jq -r '.result.workspace_id')
+  if [[ -z "$workspace" || "$workspace" == "null" ]]; then
+    echo "herdr worktree create failed: $result"
+    return 1
+  fi
+
+  sleep 0.3  # let the workspace initialise
+
+  # Get the initial pane
+  left=$(herdr pane list --workspace "$workspace" | jq -r '.result.panes[0].pane_id')
+
+  # Split right (45% for opencode)
+  right=$(herdr pane split "$left" --direction right --ratio 0.45 --focus --json \
+    | jq -r '.result.pane_id')
+
+  # Launch tools
+  herdr pane send-text "$left"  "nvim\n"
+  herdr pane send-text "$right" "opencode\n"
+}
