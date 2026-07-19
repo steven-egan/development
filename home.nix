@@ -80,7 +80,7 @@ in
   home.file.".config/starship.toml".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/starship.toml";
   home.file.".config/nvim".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/nvim";
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/nvim";
   home.file.".config/herdr/config.toml".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/herdr/config.toml";
   home.file.".claude/settings.json".source =
