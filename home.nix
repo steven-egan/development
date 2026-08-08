@@ -95,6 +95,8 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/starship.toml";
   home.file.".config/nvim".source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/nvim";
   home.file.".config/herdr/config.toml".source = ./home/herdr/config.toml;
+  home.file."Library/Application Support/lazygit/config.yml".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/lazygit/config.yml";
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";
   home.file.".claude/CLAUDE.md".source =
