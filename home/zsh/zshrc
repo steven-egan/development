@@ -21,7 +21,92 @@ dev() {
 }
 bindkey -s '^f' 'dev\n'
 
-export PATH="/opt/homebrew/bin:$HOME/.npm-global/bin:$GOPATH/bin:$PATH"
+export PATH="/opt/homebrew/bin:$HOME/.local/bin:$HOME/.npm-global/bin:$GOPATH/bin:$PATH"
+
+# ship-feature: merge PR, remove herdr workspace + worktree + branch
+# Run from inside the feature worktree
+ship-feature() {
+  local branch worktree_path main_workspace workspace_id
+
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+  if [[ -z "$branch" || "$branch" == "main" || "$branch" == "master" ]]; then
+    echo "Not inside a feature worktree (branch: ${branch:-unknown})"
+    return 1
+  fi
+
+  worktree_path=$(git rev-parse --show-toplevel)
+
+  # Merge the PR (prompts for method if not passed)
+  gh pr merge --squash --delete-branch 2>/dev/null \
+    || gh pr merge --delete-branch \
+    || { echo "PR merge failed — merged manually? (y/N)"; read -r ans; [[ "$ans" == y ]] || return 1; }
+
+  # Find the herdr workspace for this worktree's pane
+  workspace_id=$(herdr pane current --json 2>/dev/null | jq -r '.result.pane.workspace_id')
+
+  # Remove herdr workspace (closes all panes inside it)
+  if [[ -n "$workspace_id" && "$workspace_id" != "null" ]]; then
+    herdr worktree remove --workspace "$workspace_id" --force 2>/dev/null \
+      || herdr workspace close "$workspace_id" 2>/dev/null
+  fi
+
+  # Remove the git worktree and local branch from the main repo
+  main_workspace=$(git -C "$worktree_path" rev-parse --git-common-dir | xargs dirname 2>/dev/null)
+  git -C "$main_workspace" worktree remove "$worktree_path" --force 2>/dev/null
+  git -C "$main_workspace" branch -D "$branch" 2>/dev/null
+  git -C "$main_workspace" fetch --prune 2>/dev/null
+
+  echo "Shipped and cleaned up: $branch"
+}
+
+# resume-feature: fzf-pick an existing worktree and reopen the nvim + claude layout
+resume-feature() {
+  local repo worktree_path branch
+  repo=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
+  if [[ -z "$repo" ]]; then echo "Not inside a git repo"; return 1; fi
+
+  worktree_path=$(fd -t d . "$HOME/.herdr/worktrees/$repo" --max-depth 1 2>/dev/null \
+    | fzf --prompt="worktree> ") || return
+  branch=$(basename "$worktree_path")
+
+  local result workspace left right
+  result=$(herdr workspace create --cwd "$worktree_path" --label "$branch" --focus 2>&1)
+  workspace=$(echo "$result" | jq -r '.result.workspace.workspace_id')
+  left=$(echo "$result" | jq -r '.result.root_pane.pane_id')
+  if [[ -z "$workspace" || "$workspace" == "null" ]]; then
+    echo "herdr workspace create failed: $result"; return 1
+  fi
+
+  right=$(herdr pane split "$left" --direction right --ratio 0.45 --focus \
+    | jq -r '.result.pane.pane_id')
+
+  herdr pane send-text "$left"  "cd $worktree_path && nvim SPEC.md"
+  herdr pane send-keys "$left"  Enter
+  herdr pane send-text "$right" "cd $worktree_path && claude"
+  herdr pane send-keys "$right" Enter
+
+  herdr tab create --workspace "$workspace" --label "shell"
+}
+
+# rm-feature <branch>: remove worktree, branch, and prune remote refs (manual cleanup, no PR needed)
+rm-feature() {
+  local branch="${1:-}"
+  if [[ -z "$branch" ]]; then
+    echo "Usage: rm-feature <branch>"
+    return 1
+  fi
+
+  local repo
+  repo=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
+  if [[ -z "$repo" ]]; then
+    echo "Not inside a git repo"
+    return 1
+  fi
+
+  git worktree remove "$HOME/.herdr/worktrees/$repo/$branch" --force
+  git branch -D "$branch"
+  git fetch --prune
+}
 
 # new-feature <branch>: create a worktree + herdr workspace with nvim + opencode
 new-feature() {
@@ -32,24 +117,47 @@ new-feature() {
   [[ -z "$branch" ]] && return 1
 
   # Create worktree in a new herdr workspace, capture IDs
-  local result workspace panes left right
-  result=$(herdr worktree create --branch "$branch" --label "$branch" --focus --json 2>&1)
-  workspace=$(echo "$result" | jq -r '.result.workspace_id')
+  local result workspace left right
+  result=$(herdr worktree create --cwd "$PWD" --branch "$branch" --label "$branch" --focus 2>&1)
+  workspace=$(echo "$result" | jq -r '.result.workspace.workspace_id')
+  left=$(echo "$result" | jq -r '.result.root_pane.pane_id')
   if [[ -z "$workspace" || "$workspace" == "null" ]]; then
     echo "herdr worktree create failed: $result"
     return 1
   fi
 
-  sleep 0.3  # let the workspace initialise
+  local worktree_path="$HOME/.herdr/worktrees/$(basename "$PWD")/$branch"
 
-  # Get the initial pane
-  left=$(herdr pane list --workspace "$workspace" | jq -r '.result.panes[0].pane_id')
+  # Write SPEC.md skeleton — user fills this in before directing the AI
+  cat > "$worktree_path/SPEC.md" <<EOF
+# $branch
 
-  # Split right (45% for opencode)
-  right=$(herdr pane split "$left" --direction right --ratio 0.45 --focus --json \
-    | jq -r '.result.pane_id')
+## Goal
+<!-- What problem does this solve and why? -->
 
-  # Launch tools
-  herdr pane send-text "$left"  "nvim\n"
-  herdr pane send-text "$right" "opencode\n"
+## Changes
+<!-- What needs to change and where? -->
+
+## Acceptance Criteria
+- [ ]
+EOF
+
+  # Local AGENTS.md: tells opencode to treat SPEC.md as source of truth
+  cat > "$worktree_path/AGENTS.md" <<EOF
+Read SPEC.md before doing anything. It is the source of truth for this feature.
+Do not deviate from it. If anything is ambiguous, ask before writing code.
+EOF
+
+  # Split right (45% for opencode) — pane split always returns JSON, no --json flag
+  right=$(herdr pane split "$left" --direction right --ratio 0.45 --focus \
+    | jq -r '.result.pane.pane_id')
+
+  # Nvim opens directly to SPEC.md so the user writes the spec first
+  herdr pane send-text "$left"  "cd $worktree_path && nvim SPEC.md"
+  herdr pane send-keys "$left"  Enter
+  herdr pane send-text "$right" "cd $worktree_path && claude"
+  herdr pane send-keys "$right" Enter
+
+  # Tab 2: clean shell for running commands / servers
+  herdr tab create --workspace "$workspace" --label "shell" 
 }

@@ -33,7 +33,7 @@ in
     python312
   ];
 
-  home.sessionPath = [ "$HOME/.npm-global/bin" ];
+  home.sessionPath = [ "$HOME/.local/bin" "$HOME/.npm-global/bin" ];
 
   ############################################
   # Shell
@@ -81,8 +81,7 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/starship.toml";
   home.file.".config/nvim".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/nvim";
-  home.file.".config/herdr/config.toml".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/herdr/config.toml";
+  home.file.".config/herdr/config.toml".source = ./home/herdr/config.toml;
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";
   home.file.".claude/CLAUDE.md".source =
@@ -91,4 +90,11 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
   home.file.".config/opencode".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/opencode";
+
+  home.activation.installClaudeCode = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    if ! command -v claude &>/dev/null; then
+      export PATH="${pkgs.curl}/bin:${pkgs.perl}/bin:$PATH"
+      ${pkgs.curl}/bin/curl -fsSL https://claude.ai/install.sh | bash
+    fi
+  '';
 }
