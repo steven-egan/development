@@ -4,7 +4,7 @@ alias ll="ls -lah"
 alias gs="git status"
 alias gd="git diff"
 alias md="glow"
-alias rebuild="~/.dotfiles/restart.sh"
+alias restart="~/.dotfiles/restart.sh"
 alias h="herdr"
 alias h-restart="herdr server reload-config"
 alias o="opencode"
@@ -108,7 +108,7 @@ rm-feature() {
   git fetch --prune
 }
 
-# new-feature <branch>: create a worktree + herdr workspace with nvim + opencode
+# new-feature <branch>: create a worktree (via worktrunk) + herdr workspace with nvim + claude
 new-feature() {
   local branch="${1:-}"
   if [[ -z "$branch" ]]; then
@@ -116,17 +116,26 @@ new-feature() {
   fi
   [[ -z "$branch" ]] && return 1
 
-  # Create worktree in a new herdr workspace, capture IDs
-  local result workspace left right
-  result=$(herdr worktree create --cwd "$PWD" --branch "$branch" --label "$branch" --focus 2>&1)
-  workspace=$(echo "$result" | jq -r '.result.workspace.workspace_id')
-  left=$(echo "$result" | jq -r '.result.root_pane.pane_id')
-  if [[ -z "$workspace" || "$workspace" == "null" ]]; then
-    echo "herdr worktree create failed: $result"
+  # Create the branch + worktree with worktrunk; --no-cd keeps this shell put,
+  # --format json gives us the authoritative path (wt's location template, not
+  # a guess) so every pane/tab below cd's into the exact same directory.
+  local wt_result worktree_path
+  wt_result=$(wt switch --create "$branch" --no-cd --format json 2>&1)
+  worktree_path=$(echo "$wt_result" | jq -r '.path' 2>/dev/null)
+  if [[ -z "$worktree_path" || "$worktree_path" == "null" ]]; then
+    echo "wt switch --create failed: $wt_result"
     return 1
   fi
 
-  local worktree_path="$HOME/.herdr/worktrees/$(basename "$PWD")/$branch"
+  # Open a herdr workspace at that worktree, capture IDs
+  local result workspace left right
+  result=$(herdr workspace create --cwd "$worktree_path" --label "$branch" --focus 2>&1)
+  workspace=$(echo "$result" | jq -r '.result.workspace.workspace_id')
+  left=$(echo "$result" | jq -r '.result.root_pane.pane_id')
+  if [[ -z "$workspace" || "$workspace" == "null" ]]; then
+    echo "herdr workspace create failed: $result"
+    return 1
+  fi
 
   # Write SPEC.md skeleton — user fills this in before directing the AI
   cat > "$worktree_path/SPEC.md" <<EOF

@@ -1,4 +1,3 @@
-# User-level config: packages, shell, git, and dotfile symlinks.
 { config, pkgs, ... }:
 
 let
@@ -16,6 +15,7 @@ in
   home.packages = with pkgs; [
     # daily drivers
     neovim
+    tree-sitter # CLI nvim-treesitter's "main" branch shells out to for building parsers
     ripgrep
     fd
     fzf
@@ -29,11 +29,26 @@ in
 
     # languages / runtimes
     nodejs
+    bun
     go
     python312
+
+    # formatters/linters nvim's conform.nvim + nvim-lint shell out to
+    stylua
+    nixfmt
+    nixd # LSP; Mason can't install this one, it has to come from Nix
+    ruff
+    shfmt
+    shellcheck
+    golangci-lint
+    prettier
+    eslint_d
   ];
 
-  home.sessionPath = [ "$HOME/.local/bin" "$HOME/.npm-global/bin" ];
+  home.sessionPath = [
+    "$HOME/.local/bin"
+    "$HOME/.npm-global/bin"
+  ];
 
   ############################################
   # Shell
@@ -75,12 +90,10 @@ in
   };
 
   # Edit-in-place: the real file stays in my repo, ~/.config just points at it.
-  home.file.".config/ghostty".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/ghostty";
+  home.file.".config/ghostty".source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/ghostty";
   home.file.".config/starship.toml".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/starship.toml";
-  home.file.".config/nvim".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/nvim";
+  home.file.".config/nvim".source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/nvim";
   home.file.".config/herdr/config.toml".source = ./home/herdr/config.toml;
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";

@@ -1,6 +1,6 @@
 # System-level config: macOS defaults + Homebrew.
 # User-level things (shell, packages, dotfile symlinks) live in home.nix.
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
   # Determinate Nix manages the nix daemon itself; nix-darwin must not touch it.
@@ -80,10 +80,12 @@
 
     brews = [
       "herdr"      # agent multiplexer (replaces tmux)
+      "worktrunk"  # git worktree manager, used by new-feature
       "docker"     # docker CLI
       "luarocks"   # lazy.nvim wants it
       "armmbed/formulae/arm-none-eabi-gcc"
       "anomalyco/tap/opencode"
+      "cmake"
     ];
 
     casks = [
@@ -97,4 +99,17 @@
       "obsidian"
     ];
   };
+
+  # herdr is ad-hoc signed (no Developer ID), so every `brew upgrade` gives it
+  # a new signature and macOS invalidates its TCC grants (Accessibility/
+  # Automation/Full Disk Access) — sometimes hard enough to SIGKILL it with a
+  # "Launch Constraint Violation". Pin it so the declarative `upgrade = true`
+  # above leaves it alone; bump it deliberately with:
+  #   brew unpin herdr && brew upgrade herdr && brew pin herdr
+  system.activationScripts.postActivation.text = ''
+    if [ -x "${config.homebrew.prefix}/bin/brew" ]; then
+      sudo --preserve-env=PATH --user=${config.homebrew.user} --set-home \
+        env PATH="${config.homebrew.prefix}/bin:$PATH" brew pin herdr || true
+    fi
+  '';
 }

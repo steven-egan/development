@@ -1,0 +1,18 @@
+worktrunk looks to be a better worktree manager than herdr (Need to ensure AI agents are operating in the same context)
+gh dash is cool, and can be customized for good PR management
+    -> TUICR https://github.com/agavra/tuicr looks promising for PR reviewing
+    -> Theres also a supported nvim package for PR review octo https://github.com/pwntester/octo.nvim
+NVIM setup
+    -> This needs to be ported over from my dotfiles repo
+    
+AI skills installs
+    -> https://github.com/mattpocock/skills
+
+Could we install zen with this nix flow
+    -> How about extensions I like?
+
+    
+Docker apparently has a good way to sandbox ai tooling
+
+
+## Learning items
