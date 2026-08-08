@@ -1,0 +1,12 @@
+# lazygit — symlinked into ~/Library/Application Support/lazygit/config.yml
+# by home.nix. Edit here, the change is live immediately. No rebuild.
+
+customCommands:
+  # From the branches panel: create a PR for the selected branch via `gh`,
+  # same as running `gh pr create` yourself — output: terminal hands over the
+  # full terminal so its title/body/reviewer prompts work normally.
+  - key: "<c-p>"
+    context: "localBranches"
+    description: "Create pull request (gh pr create)"
+    command: "gh pr create --head {{.SelectedLocalBranch.Name}}"
+    output: terminal
