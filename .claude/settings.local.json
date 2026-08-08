@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:herdr.dev)",
+      "WebFetch(domain:worktrunk.dev)",
+      "Bash(herdr --help)",
+      "Bash(herdr workspace *)",
+      "Bash(herdr worktree *)",
+      "Bash(herdr tab *)",
+      "Bash(herdr pane *)",
+      "Bash(wt switch *)",
+      "Read(//tmp/**)",
+      "Bash(wt config *)",
+      "Bash(rm -rf /private/tmp/claude-501/-Users-egan-Desktop-repos-development/72cfdd83-27a5-47ad-93a6-273b109e1437/scratchpad/wt-test*)",
+      "Bash(herdr status *)",
+      "Bash(wt remove *)",
+      "Bash(wt list *)"
+    ]
+  }
+}
