@@ -21,6 +21,8 @@ return {
         "ts_ls",
         "bashls",
         "jsonls",
+        "yaml-language-server",
+        "helm-ls",
       },
     },
   },
@@ -31,7 +33,66 @@ return {
     dependencies = { "saghen/blink.cmp", "nvim-telescope/telescope.nvim" },
     config = function()
       vim.lsp.config("*", { capabilities = require("blink.cmp").get_lsp_capabilities() })
+
+      -- YAML: k8s JSON schema applied to k8s-looking manifests, SchemaStore
+      -- covers everything else (docker-compose, GH Actions, etc.)
+      vim.lsp.config("yaml_ls", {
+        settings = {
+          yaml = {
+            schemaStore = { enable = true },
+            validate = true,
+            schemas = {
+              ["https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.11-standalone-strict/all.json"] = {
+                "*.k8s.yaml",
+                "*.k8s.yml",
+                "**/k8s/**/*.yaml",
+                "**/k8s/**/*.yml",
+                "**/manifests/**/*.yaml",
+                "**/manifests/**/*.yml",
+                "*deployment.yaml",
+                "*service.yaml",
+                "*configmap.yaml",
+                "*secret.yaml",
+                "*ingress.yaml",
+                "*statefulset.yaml",
+                "*daemonset.yaml",
+                "*cronjob.yaml",
+                "*job.yaml",
+                "*pod.yaml",
+                "*hpa.yaml",
+                "*pv.yaml",
+                "*pvc.yaml",
+                "*namespace.yaml",
+              },
+            },
+          },
+        },
+      })
+
+      -- Helm: autocompletion in templates/ and values files. helm-ls delegates
+      -- YAML duties to the yaml-language-server installed by Mason (using its
+      -- bundled k8s schema for rendered manifests).
+      vim.lsp.config("helm_ls", {
+        settings = {
+          ["helm-ls"] = {
+            yamlls = {
+              path = vim.fn.stdpath("data") .. "/mason/bin/yaml-language-server",
+              enabled = true,
+              config = {
+                schemas = {
+                  kubernetes = "templates/**",
+                },
+                completion = true,
+                hover = true,
+              },
+            },
+          },
+        },
+      })
+
       vim.lsp.enable("nixd")
+      vim.lsp.enable("yaml_ls")
+      vim.lsp.enable("helm_ls")
 
       vim.api.nvim_create_autocmd("LspAttach", {
         group = vim.api.nvim_create_augroup("lsp-attach", { clear = true }),

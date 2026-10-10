@@ -8,6 +8,11 @@ alias restart="~/.dotfiles/restart.sh"
 alias h="herdr"
 alias h-restart="herdr server reload-config"
 alias o="opencode"
+alias k="kubectl"
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
 
 export EDITOR="nvim"
 export VISUAL="nvim"
@@ -56,7 +61,7 @@ ship-feature() {
   git -C "$main_workspace" branch -D "$branch" 2>/dev/null
   git -C "$main_workspace" fetch --prune 2>/dev/null
 
-  echo "Shipped and cleaned up: $branch"
+ alias ll="ls -lah" echo "Shipped and cleaned up: $branch"
 }
 
 # resume-feature: fzf-pick an existing worktree and reopen the nvim + claude layout

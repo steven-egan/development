@@ -39,7 +39,7 @@
       AppleInterfaceStyle = "Dark";
       AppleShowAllExtensions = true;
       InitialKeyRepeat = 15; # shorter delay before repeat
-      KeyRepeat = 2;         # faster repeat
+      KeyRepeat = 2; # faster repeat
       NSAutomaticSpellingCorrectionEnabled = false;
     };
     dock = {
@@ -56,40 +56,35 @@
   };
 
   ############################################
-  # Homebrew — declarative
-  #
-  # cleanup = "zap": every rebuild REMOVES any brew package/cask on this
-  # machine that isn't listed below. Fully declarative, but add anything
-  # you want to keep BEFORE the first switch.
+  # Homebrew — declarative additions; unmanaged packages are preserved.
   ############################################
   homebrew = {
     enable = true;
     onActivation = {
       autoUpdate = true;
       upgrade = true;
-      cleanup = "zap";
     };
 
     taps = [
-      "nikitabobko/tap"      # aerospace
-      "zegervdv/zathura"     # pdf viewer
+      "nikitabobko/tap" # aerospace
+      "zegervdv/zathura" # pdf viewer
       "osx-cross/arm"
       "osx-cross/avr"
       "armmbed/formulae"
     ];
 
     brews = [
-      "herdr"      # agent multiplexer (replaces tmux)
-      "worktrunk"  # git worktree manager, used by new-feature
-      "docker"     # docker CLI
-      "luarocks"   # lazy.nvim wants it
+      "herdr" # agent multiplexer (replaces tmux)
+      "worktrunk" # git worktree manager, used by new-feature
+      "docker" # docker CLI
+      "luarocks" # lazy.nvim wants it
       "armmbed/formulae/arm-none-eabi-gcc"
       "anomalyco/tap/opencode"
       "cmake"
     ];
 
     casks = [
-      "ghostty"                  # terminal (replaces old terminal setup)
+      "ghostty" # terminal (replaces old terminal setup)
       "nikitabobko/tap/aerospace" # tiling window manager
       "bitwarden"
       "db-browser-for-sqlite"

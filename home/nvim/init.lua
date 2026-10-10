@@ -17,6 +17,7 @@ vim.opt.wrap = false
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.signcolumn = "yes"
+vim.opt.showtabline = 2
 vim.opt.termguicolors = true
 vim.opt.scrolloff = 8
 vim.opt.clipboard = "unnamedplus" -- share system clipboard
