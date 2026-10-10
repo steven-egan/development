@@ -29,8 +29,6 @@ git clone <this repo> && cd nix-dotfiles
 
 Installs Determinate Nix + Homebrew if missing, symlinks the repo to `~/.dotfiles`, runs the first switch. Afterward open Ghostty and you're home.
 
-> **⚠️ Homebrew zap warning:** `cleanup = "zap"` in `configuration.nix` means every rebuild **uninstalls** any brew package/cask not listed there. Before the first run on an existing machine, `brew leaves` + `brew list --cask` and add anything you want to keep.
-
 ## Daily use
 
 ```sh

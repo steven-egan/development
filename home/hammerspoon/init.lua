@@ -39,3 +39,13 @@ hs.hotkey.bind({ "cmd", "alt" }, "C", function()
 		end
 	end)
 end)
+
+-- Search clipboard text in browser (⌘⌥S)
+local ok, SearchClipboard = pcall(dofile, (hs.configdir or ".") .. "/Spoons/SearchClipboard.spoon/init.lua")
+if ok and SearchClipboard then
+	hs.hotkey.bind({ "cmd", "alt" }, "S", function()
+		SearchClipboard:searchClipboard()
+	end)
+else
+	hs.alert.show("SearchClipboard spoon failed to load")
+end

@@ -7,7 +7,7 @@ return {
   build = ":TSUpdate",
   config = function()
     require("nvim-treesitter").install({
-      "lua", "nix", "python", "go", "typescript", "tsx", "markdown", "bash", "json", "toml",
+      "lua", "nix", "python", "go", "typescript", "tsx", "markdown", "bash", "json", "toml", "yaml", "helm",
     })
 
     -- Highlighting/indent are no longer enabled by a `setup()` table on this
