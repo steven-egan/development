@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 let
   # The repo is symlinked to ~/. by bootstrap.sh.
@@ -8,6 +8,13 @@ let
 in
 {
   home.stateVersion = "26.05";
+
+  imports = [ inputs.hunk.homeManagerModules.default ];
+
+  programs.hunk = {
+    enable = true;
+    enableGitIntegration = true;
+  };
 
   ############################################
   # Packages (CLI tools come from Nix now, not brew)
