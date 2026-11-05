@@ -6,7 +6,9 @@ return {
   lazy = false, -- this branch doesn't support lazy-loading
   build = ":TSUpdate",
   config = function()
-    require("nvim-treesitter").install({
+    require("nvim-treesitter").setup()
+
+    require("nvim-treesitter.install").ensure_installed({
       "lua", "nix", "python", "go", "typescript", "tsx", "markdown", "bash", "json", "toml", "yaml", "helm",
     })
 
@@ -14,8 +16,11 @@ return {
     -- branch — start them explicitly per buffer.
     vim.api.nvim_create_autocmd("FileType", {
       callback = function()
-        pcall(vim.treesitter.start)
-        vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+        local bufnr = vim.api.nvim_get_current_buf()
+        pcall(vim.treesitter.start, bufnr)
+        pcall(function()
+          require("nvim-treesitter.indent").attach(bufnr)
+        end)
       end,
     })
   end,
