@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }:
+{ config, pkgs, inputs, userConfig, lib, ... }:
 
 let
   # The repo is symlinked to ~/. by bootstrap.sh.
@@ -7,7 +7,13 @@ let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
 in
 {
+  home.username = userConfig.username;
+  home.homeDirectory = userConfig.homeDirectory;
   home.stateVersion = "26.05";
+
+  # Required by modules that integrate with Home Manager accounts.* modules.
+  accounts.calendar.basePath = "${userConfig.homeDirectory}/.calendar";
+  accounts.contact.basePath = "${userConfig.homeDirectory}/.contacts";
 
   imports = [ inputs.hunk.homeManagerModules.default ];
 
@@ -87,8 +93,8 @@ in
   programs.git = {
     enable = true;
     settings = {
-      user.name = "Steven Egan";
-      user.email = "stevenegan10@gmail.com";
+      user.name = userConfig.gitName;
+      user.email = userConfig.gitEmail;
       init.defaultBranch = "main";
       pull.rebase = true;
       push.autoSetupRemote = true;
@@ -97,21 +103,28 @@ in
   };
 
   # Edit-in-place: the real file stays in my repo, ~/.config just points at it.
-  home.file.".config/ghostty".source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/ghostty";
-  home.file.".config/starship.toml".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/starship.toml";
-  home.file.".config/nvim".source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/nvim";
-  home.file.".config/herdr/config.toml".source = ./home/herdr/config.toml;
-  home.file."Library/Application Support/lazygit/config.yml".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/lazygit/config.yml";
-  home.file.".claude/settings.json".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";
-  home.file.".claude/CLAUDE.md".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
-  home.file.".codex/AGENTS.md".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
-  home.file.".config/opencode".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/opencode";
+  home.file = {
+    ".config/ghostty".source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/ghostty";
+    ".config/starship.toml".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/starship.toml";
+    ".config/nvim".source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/nvim";
+    ".config/herdr/config.toml".source = ./home/herdr/config.toml;
+    ".aerospace.toml".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/aerospace/aerospace.toml";
+    ".hammerspoon".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/hammerspoon";
+    "Library/Application Support/lazygit/config.yml".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/lazygit/config.yml";
+    ".claude/CLAUDE.md".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/AGENTS.md";
+    ".codex/AGENTS.md".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/AGENTS.md";
+    ".config/opencode".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/opencode";
+  } // lib.optionalAttrs (builtins.pathExists ./home/.claude/settings.json) {
+    ".claude/settings.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";
+  };
 
   home.activation.installClaudeCode = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     if ! command -v claude &>/dev/null; then

@@ -82,4 +82,11 @@ nix build .#darwinConfigurations.mac.system --dry-run
 
 ## Make it not-mine
 
-Username/home path: `flake.nix` (`home-manager.users.egan`), `configuration.nix` (`primaryUser`, `users.users`), `home.nix` (git identity). Host label `mac`: `flake.nix` + both scripts. Intel Mac: `hostPlatform = "x86_64-darwin"` in `configuration.nix`.
+Change only one block in `flake.nix`: `darwinConfigurations."mac" = mkDarwinHost { ... }`.
+
+- `username` controls both nix-darwin (`primaryUser`, `users.users`) and Home Manager user wiring.
+- `homeDirectory` defaults to `/Users/<username>` (override only if needed).
+- `gitName` / `gitEmail` feed Home Manager git config.
+- `hostPlatform` defaults to `aarch64-darwin`; set to `x86_64-darwin` on Intel Macs.
+
+Host label `mac`: `flake.nix` + both scripts.

@@ -28,6 +28,9 @@ bindkey -s '^f' 'dev\n'
 
 export PATH="/opt/homebrew/bin:$HOME/.local/bin:$HOME/.npm-global/bin:$GOPATH/bin:$PATH"
 
+# Add rbenv shims so `ruby` resolves to the version selected by rbenv.
+eval "$(rbenv init - zsh)"
+
 # ship-feature: merge PR, remove herdr workspace + worktree + branch
 # Run from inside the feature worktree
 ship-feature() {
@@ -133,7 +136,7 @@ new-feature() {
   # a guess) so every pane/tab below cd's into the exact same directory.
   local wt_result worktree_path
   wt_result=$(wt switch --create "$branch" --no-cd --format json 2>&1)
-  worktree_path=$(echo "$wt_result" | jq -r '.path' 2>/dev/null)
+  worktree_path=$(echo "$wt_result" | jq -Rr 'fromjson? | select(type == "object") | .path')
   if [[ -z "$worktree_path" || "$worktree_path" == "null" ]]; then
     echo "wt switch --create failed: $wt_result"
     return 1
@@ -176,9 +179,9 @@ EOF
   # Nvim opens directly to SPEC.md so the user writes the spec first
   herdr pane send-text "$left"  "cd $worktree_path && nvim SPEC.md"
   herdr pane send-keys "$left"  Enter
-  herdr pane send-text "$right" "cd $worktree_path && claude"
+  herdr pane send-text "$right" "cd $worktree_path && opencode"
   herdr pane send-keys "$right" Enter
 
   # Tab 2: clean shell for running commands / servers
-  herdr tab create --workspace "$workspace" --label "shell" 
+  herdr tab create --workspace "$workspace" --label "shell"
 }

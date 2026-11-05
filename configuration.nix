@@ -1,19 +1,19 @@
 # System-level config: macOS defaults + Homebrew.
 # User-level things (shell, packages, dotfile symlinks) live in home.nix.
-{ config, pkgs, ... }:
+{ config, pkgs, userConfig, ... }:
 
 {
   # Determinate Nix manages the nix daemon itself; nix-darwin must not touch it.
   nix.enable = false;
 
-  nixpkgs.hostPlatform = "aarch64-darwin";
+  nixpkgs.hostPlatform = userConfig.hostPlatform;
 
   system.stateVersion = 6;
-  system.primaryUser = "egan";
+  system.primaryUser = userConfig.username;
 
-  users.users.egan = {
-    name = "egan";
-    home = "/Users/egan";
+  users.users.${userConfig.username} = {
+    name = userConfig.username;
+    home = userConfig.homeDirectory;
   };
 
   # zsh as the shell; nix-darwin wires the Nix env into it.
@@ -85,6 +85,7 @@
 
     casks = [
       "ghostty" # terminal (replaces old terminal setup)
+      "hammerspoon" # macOS automation
       "nikitabobko/tap/aerospace" # tiling window manager
       "bitwarden"
       "db-browser-for-sqlite"
