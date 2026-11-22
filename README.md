@@ -1,97 +1,123 @@
-# nix-dotfiles
+# Development Setup
 
-My Mac, managed with nix-darwin + home-manager. One repo, one command, and a fresh Mac ends up configured the same way every time.
+An Apple Silicon macOS development environment managed with Nix, nix-darwin,
+Home Manager, and Homebrew. The main tools are Ghostty, herdr, Neovim,
+AeroSpace, OpenCode, Raycast, and Hammerspoon.
 
-Terminal-first, AI-agent-first: **Ghostty** (terminal) + **herdr** (agent multiplexer, replaces tmux) + Neovim + AeroSpace.
+## First-Time Setup
 
-## How it works
-
-How to apply changes:
-
-- **Live-linked config files** (including Ghostty, nvim, AeroSpace, Hammerspoon, and starship) point into `home/`. Edits do not require a rebuild, though applications may need a reload.
-- **herdr config** (`home/herdr/config.toml`) is copied into the Nix store by Home Manager. Rebuild after editing it, then reload herdr's config.
-- **Nix configuration** (packages, macOS defaults, and Home Manager settings) requires `./restart.sh`.
-
-```
-flake.nix          entry point; declares the "mac" machine
-configuration.nix  system: macOS defaults, Homebrew apps
-home.nix           user: packages, zsh, git, config symlinks
-home/              application configs (mostly live-linked into the home directory)
-bootstrap.sh       fresh-machine setup (run once)
-restart.sh         apply changes (run every time you edit .nix files)
-```
-
-## Fresh machine
+Clone this repository and create the machine-local configuration before running
+the installer:
 
 ```sh
-git clone <this repo> && cd nix-dotfiles
+git clone <repository-url> development
+cd development
+cp .env.example .env
+# Edit .env for this machine.
 ./bootstrap.sh
 ```
 
-Installs Determinate Nix + Homebrew if missing, symlinks the repo to `~/.dotfiles`, runs the first switch. Afterward open Ghostty and you're home.
+`bootstrap.sh` installs Determinate Nix and Homebrew if they are missing,
+links the repository to `~/.dotfiles`, and runs the first system switch. It
+downloads installer scripts from the internet and may request administrator
+access. Check that an existing `~/.dotfiles` points to the intended repository
+before running it.
 
-## Daily use
-
-```sh
-restart            # alias for ~/.dotfiles/restart.sh — applies .nix changes
-dev                # (or ctrl+f) fuzzy-jump to any repo — replaces tmux-sessionizer
-herdr              # start the herd
-```
-
-### herdr crash course (tmux muscle memory mostly carries over)
-
-Prefix is `ctrl+g`:
-
-| Keys | Action |
-|---|---|
-| `prefix c` / `n` / `p` | new / next / prev tab |
-| `prefix v` / `prefix -` | split vertical / horizontal |
-| `prefix h j k l` | focus pane |
-| `prefix z` | zoom pane |
-| `prefix w` | workspace picker |
-| `prefix q` | detach — agents keep running |
-| `prefix alt+g` | lazygit pane (custom, in `home/herdr/config.toml`) |
-| `prefix ?` | help |
-
-Sessions survive closing Ghostty. `herdr` reattaches. Works over SSH from a phone too.
-
-## Migration notes (vs the old dot_files setup)
-
-Dropped, on purpose:
-
-- **tmux** → herdr. **stow** → home-manager symlinks. Hammerspoon and AeroSpace remain.
-- **zsh-autosuggestions / syntax-highlighting brews** → managed by home-manager in `home.nix`.
-- **pyenv / python@3.11** → Nix provides Python 3.12; per-project versions belong in a project flake or `poetry env use`.
-- **isort / pylint** → per-project dev deps, not global installs.
-- **font cask** → MesloLG Nerd Font now comes from nixpkgs (`fonts.packages`).
-- **hashicorp vlt** → add back to `brews` in `configuration.nix` if you still use it.
-
-Still here: the ARM toolchain, Bitwarden, Docker CLI, DB Browser, glow, gh, and lazygit (installed through Homebrew or Nix).
-
-Claude Code is installed by a Home Manager activation if it is not already on PATH. Other npm-based tools can be installed under `~/.npm-global`, which is on PATH:
+Open a new terminal after setup. Later changes to Nix configuration are applied
+from the main repository with:
 
 ```sh
-npm install -g @openai/codex
+./restart.sh
+# Or, in a configured shell:
+restart
 ```
 
-## Validate without applying
+The rebuild may update and upgrade Homebrew packages, requests `sudo`, and
+attempts to remove the macOS provenance attribute from the repository and
+reset ownership of its `.git` directory. Raycast snippet generation runs after
+a successful switch; importing the generated file is a separate step.
+
+## Machine Settings
+
+`.env` is ignored by Git and required by `restart.sh`. The individual settings
+are optional, but empty or missing values fall back to the defaults in
+`flake.nix`, including its existing Git identity. Set them explicitly on a new
+machine:
+
+The rebuild sources `.env` as shell code: use trusted content and quote shell
+values that contain spaces. It exports the values in a subshell and uses
+`sudo -E`, so the privileged rebuild can see them and the inherited environment.
+Values used by Nix can also enter the world-readable Nix store. Do not use
+these settings for secrets.
+
+Raycast and Hammerspoon read their settings directly as literal `KEY=value`
+lines, without shell quoting or expansion. For example, leave
+`DOTFILES_GIT_EMAIL` unquoted and use an unquoted path for
+`OBSIDIAN_DAILY_NOTE_PATH`; Hammerspoon expands a leading `~/` itself. Reload
+Hammerspoon after changing the path. Its shortcuts require macOS Accessibility
+permissions, and task capture requires the Obsidian CLI to be enabled.
+
+## Configuration
+
+| Path                                               | Contents                                     | Apply changes                                  |
+| -------------------------------------------------- | -------------------------------------------- | ---------------------------------------------- |
+| `flake.nix`, `flake.lock`                          | Host definition and locked Nix inputs        | Run `./restart.sh`                             |
+| `configuration.nix`                                | macOS settings and Homebrew packages         | Run `./restart.sh`                             |
+| `home.nix`                                         | Home Manager packages, Git, shell, and links | Run `./restart.sh`                             |
+| `home/herdr/config.toml`                           | herdr configuration                          | Rebuild, then run `herdr server reload-config` |
+| `home/nvim/`, `home/ghostty/`, `home/hammerspoon/` | Application configuration                    | Live-linked; reload the application if needed  |
+| `home/raycast/`                                    | Snippet template and generator               | Generate and import in Raycast                 |
+
+Most application configs are linked into the home directory through
+`~/.dotfiles`; herdr's config is copied through the Nix store instead. The
+`dev` shell function searches for repositories under `~/Desktop/repos`.
+
+`flake.lock` pins the Nix inputs and the nix-darwin rebuild package. It does
+not pin Homebrew packages or the Nix, Homebrew, and Claude Code installer
+scripts. Homebrew is configured to update and upgrade packages during system
+activation.
+
+## Daily Workflow
+
+| Command                | Purpose                                               |
+| ---------------------- | ----------------------------------------------------- |
+| `restart`              | Apply Nix and Home Manager changes                    |
+| `dev` or `Ctrl+F`      | Search for a local repository                         |
+| `herdr` or `h`         | Start herdr                                           |
+| `new-feature <branch>` | Create a worktree and open a spec and agent workspace |
+
+`new-feature` preserves existing `AGENTS.md` and `SPEC.md` files. When no spec
+exists, it creates a skeleton and opens it in Neovim. The separate
+`ship-feature` and `rm-feature` helpers use forced worktree and branch removal;
+check for uncommitted or unmerged work before using them.
+
+herdr's configured prefix is `Ctrl+G`. Use `prefix+?` to inspect keybindings;
+`prefix+Alt+G` opens lazygit in a pane.
+
+## Raycast Snippets
+
+Add snippets to `home/raycast/template.json`. Use `${VARIABLE_NAME}` in a
+string to insert a literal value from `.env`. Generate the import file with:
+
+```sh
+bash home/raycast/generate-snippets.sh
+```
+
+In Raycast, run **Import Snippets**, press `Cmd+Shift+G`, and select
+`~/.dotfiles/home/raycast/snippets.generated.json`. Review and confirm the
+import. Raycast does not automatically sync the file; check for duplicates
+before reimporting. The generated file is ignored by Git and may contain
+personal values. See `home/raycast/snippets.md` for the template format.
+
+## Troubleshooting
+
+### Validate Nix configuration
 
 ```sh
 nix flake check --no-build
 nix build .#darwinConfigurations.mac.system --dry-run
 ```
 
-## Make it not-mine
-
-Create `.env` from `.env.example` before running `./bootstrap.sh` or `./restart.sh`. The scripts source `.env` as shell code, so use only trusted content and quote shell values containing spaces. Raycast and Hammerspoon read their settings as literal text, without quotes or shell expansion. Leave a machine setting empty or omit it to use the defaults in `flake.nix`.
-
-- `DOTFILES_USERNAME` controls both nix-darwin and Home Manager user wiring.
-- `DOTFILES_HOME_DIRECTORY` defaults to `/Users/<username>` (override only if needed).
-- `DOTFILES_GIT_NAME` / `DOTFILES_GIT_EMAIL` feed Home Manager git config.
-- `DOTFILES_HOST_PLATFORM` defaults to `aarch64-darwin`; the rebuild package is currently configured for Apple Silicon.
-
-The rebuild exports `.env` in a subshell and preserves its environment through `sudo`; its values and the inherited environment can be visible to the privileged rebuild. Settings used by Nix can become part of the world-readable Nix store, so do not put secrets in these fields. Direct pure Nix commands, including the validation commands above, ignore `.env` and use the defaults; to validate overrides, export the variables explicitly and add `--impure`. Host label `mac` is fixed in `flake.nix` and the scripts.
-
-Set `OBSIDIAN_DAILY_NOTE_PATH` to the directory containing daily notes (a leading `~/` is expanded). Hammerspoon reads this setting directly from `~/.dotfiles/.env` on config reload, so it works when launched as a GUI app; reload Hammerspoon after changing it. If the entry is absent, it also accepts an inherited environment variable; an empty or missing value uses the existing default in `home/hammerspoon/config.lua`. The repository search root in `home/zsh/zshrc` remains a local assumption and may need adjusting. Hammerspoon requires macOS Accessibility permissions; task capture also requires the Obsidian CLI to be enabled.
-
-Raycast snippets can be generated from `home/raycast/template.json` and imported manually; see `home/raycast/snippets.md` for details. Rebuilds use the nix-darwin version in `flake.lock`, but the Nix, Homebrew, and Claude installers and Homebrew package upgrades remain unpinned.
+These commands are pure by default and do not read `.env`; they evaluate the
+defaults in `flake.nix`. To check machine-specific overrides, export the
+relevant variables in your shell and add `--impure`.

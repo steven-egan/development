@@ -6,7 +6,6 @@ alias gd="git diff"
 alias md="glow"
 alias restart="~/.dotfiles/restart.sh"
 alias h="herdr"
-alias h-restart="herdr server reload-config"
 alias o="opencode"
 alias k="kubectl"
 alias ..='cd ..'
