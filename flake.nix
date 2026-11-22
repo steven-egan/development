@@ -20,21 +20,38 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-darwin, home-manager, ... }:
+  outputs =
+    inputs@{
+      self,
+      nixpkgs,
+      nix-darwin,
+      home-manager,
+      ...
+    }:
     let
-      mkDarwinHost = {
-        hostLabel,
-        username,
-        gitName,
-        gitEmail,
-        homeDirectory ? "/Users/${username}",
-        hostPlatform ? "aarch64-darwin",
-      }:
+      envOr = name: fallback:
+        let value = builtins.getEnv name;
+        in if value == "" then fallback else value;
+      mkDarwinHost =
+        {
+          hostLabel,
+          username,
+          gitName,
+          gitEmail,
+          homeDirectory ? "/Users/${username}",
+          hostPlatform ? "aarch64-darwin",
+        }:
         nix-darwin.lib.darwinSystem {
           specialArgs = {
             inherit inputs;
             userConfig = {
-              inherit username gitName gitEmail homeDirectory hostPlatform;
+              inherit
+                username
+                gitName
+                gitEmail
+                homeDirectory
+                hostPlatform
+                ;
             };
           };
 
@@ -54,7 +71,13 @@
               home-manager.extraSpecialArgs = {
                 inherit inputs;
                 userConfig = {
-                  inherit username gitName gitEmail homeDirectory hostPlatform;
+                  inherit
+                    username
+                    gitName
+                    gitEmail
+                    homeDirectory
+                    hostPlatform
+                    ;
                 };
               };
               home-manager.users.${username} = import ./home.nix;
@@ -63,12 +86,16 @@
         };
     in
     {
-      # "mac" is the host label. It must match the `#mac` in restart.sh/rebuild.sh.
+      packages.aarch64-darwin.darwin-rebuild = nix-darwin.packages.aarch64-darwin.darwin-rebuild;
+
+      # "mac" is the host label. It must match the `#mac` in restart.sh.
       darwinConfigurations."mac" = mkDarwinHost {
         hostLabel = "mac";
-        username = "stevenegan";
-        gitName = "segan2022";
-        gitEmail = "steven.egan@ibm.com";
+        username = envOr "DOTFILES_USERNAME" "egan";
+        gitName = envOr "DOTFILES_GIT_NAME" "steven-egan";
+        gitEmail = envOr "DOTFILES_GIT_EMAIL" "stevenegan10@gmail.com";
+        homeDirectory = envOr "DOTFILES_HOME_DIRECTORY" "/Users/${envOr "DOTFILES_USERNAME" "egan"}";
+        hostPlatform = envOr "DOTFILES_HOST_PLATFORM" "aarch64-darwin";
       };
     };
 }

@@ -88,9 +88,9 @@ resume-feature() {
   right=$(herdr pane split "$left" --direction right --ratio 0.45 --focus \
     | jq -r '.result.pane.pane_id')
 
-  herdr pane send-text "$left"  "cd $worktree_path && nvim SPEC.md"
+  herdr pane send-text "$left"  "cd ${(q)worktree_path} && nvim SPEC.md"
   herdr pane send-keys "$left"  Enter
-  herdr pane send-text "$right" "cd $worktree_path && claude"
+  herdr pane send-text "$right" "cd ${(q)worktree_path} && claude"
   herdr pane send-keys "$right" Enter
 
   herdr tab create --workspace "$workspace" --label "shell"
@@ -152,8 +152,9 @@ new-feature() {
     return 1
   fi
 
-  # Write SPEC.md skeleton — user fills this in before directing the AI
-  cat > "$worktree_path/SPEC.md" <<EOF
+  # Preserve an existing spec; otherwise create a skeleton for the new task.
+  if [[ ! -e "$worktree_path/SPEC.md" ]]; then
+    cat > "$worktree_path/SPEC.md" <<EOF
 # $branch
 
 ## Goal
@@ -165,21 +166,16 @@ new-feature() {
 ## Acceptance Criteria
 - [ ]
 EOF
-
-  # Local AGENTS.md: tells opencode to treat SPEC.md as source of truth
-  cat > "$worktree_path/AGENTS.md" <<EOF
-Read SPEC.md before doing anything. It is the source of truth for this feature.
-Do not deviate from it. If anything is ambiguous, ask before writing code.
-EOF
+  fi
 
   # Split right (45% for opencode) — pane split always returns JSON, no --json flag
   right=$(herdr pane split "$left" --direction right --ratio 0.45 --focus \
     | jq -r '.result.pane.pane_id')
 
   # Nvim opens directly to SPEC.md so the user writes the spec first
-  herdr pane send-text "$left"  "cd $worktree_path && nvim SPEC.md"
+  herdr pane send-text "$left"  "cd ${(q)worktree_path} && nvim SPEC.md"
   herdr pane send-keys "$left"  Enter
-  herdr pane send-text "$right" "cd $worktree_path && opencode"
+  herdr pane send-text "$right" "cd ${(q)worktree_path} && opencode"
   herdr pane send-keys "$right" Enter
 
   # Tab 2: clean shell for running commands / servers

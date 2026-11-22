@@ -8,7 +8,7 @@ return {
   config = function()
     require("nvim-treesitter").setup()
 
-    require("nvim-treesitter.install").ensure_installed({
+    require("nvim-treesitter").install({
       "lua", "nix", "python", "go", "typescript", "tsx", "markdown", "bash", "json", "toml", "yaml", "helm",
     })
 
@@ -18,9 +18,7 @@ return {
       callback = function()
         local bufnr = vim.api.nvim_get_current_buf()
         pcall(vim.treesitter.start, bufnr)
-        pcall(function()
-          require("nvim-treesitter.indent").attach(bufnr)
-        end)
+        vim.bo[bufnr].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
       end,
     })
   end,

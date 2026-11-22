@@ -45,6 +45,8 @@ in
     bun
     go
     python312
+    rustc
+    cargo
 
     # formatters/linters nvim's conform.nvim + nvim-lint shell out to
     stylua

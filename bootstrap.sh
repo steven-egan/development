@@ -1,5 +1,5 @@
 #!/bin/bash
-# One-time setup on a fresh (or current) Mac. After this, use ./rebuild.sh.
+# One-time setup on a fresh (or current) Mac. After this, use ./restart.sh.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -25,9 +25,9 @@ fi
 ln -sfn "$PWD" "$HOME/.dotfiles"
 echo "Linked $PWD -> ~/.dotfiles ✅"
 
-# 4. First switch (installs darwin-rebuild; later runs use ./rebuild.sh)
+# 4. First switch (uses the same machine settings as later switches)
 echo "Running first darwin-rebuild switch..."
-sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake "$HOME/.dotfiles#mac"
+./restart.sh
 
 echo "✅ Done. Open a new terminal (Ghostty!) and you're on the new setup."
-echo "   Daily workflow: edit config -> ./rebuild.sh"
+echo "   Daily workflow: edit config -> ./restart.sh"

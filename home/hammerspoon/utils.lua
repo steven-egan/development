@@ -3,6 +3,7 @@ local function copySelected(cb)
 	local app = hs.application.frontmostApplication()
 	if not app then
 		cb(nil, "No frontmost application")
+		return
 	end
 
 	-- Refocus app in case focus lost

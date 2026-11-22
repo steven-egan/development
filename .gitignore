@@ -2,3 +2,4 @@
 result
 *SPEC.md
 .env
+home/raycast/*.generated.json
